@@ -266,7 +266,8 @@ def _request_gemini_analysis(
         },
         method="POST",
     )
-    with urlopen(request, timeout=12) as response:
+    # Give Gemini enough time to respond during transient load spikes.
+    with urlopen(request, timeout=30) as response:
         payload = json.loads(response.read().decode("utf-8"))
 
     response_text = payload["candidates"][0]["content"]["parts"][0]["text"]
