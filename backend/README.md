@@ -1,10 +1,10 @@
 # Backend
 
-FastAPI service for call management and Supabase persistence. Gemini assistance is planned but not implemented yet.
+FastAPI service for call management, Supabase persistence, and optional Gemini coaching.
 
 ## Local setup
 
-1. Create `backend/.env` using `.env.example` as a guide. Set `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` to your project values. Keep the secret key in the backend only; never commit `.env` or place it in frontend code.
+1. Copy `.env.example` to `.env` in this directory. Set `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` to your project URL and backend-only secret/service-role key. `GEMINI_API_KEY` is optional: leave it blank to use fallback suggestions, or provide a Gemini API key to enable AI suggestions. `GEMINI_MODEL` defaults to `gemini-3.5-flash-lite`. `FRONTEND_ORIGIN` is optional for local development; set it to the deployed frontend origin in production. Keep secret keys in the backend only; never commit `.env` or place keys in frontend code.
 2. From this `backend` directory, install dependencies and start the development server:
 
    ```powershell
@@ -24,6 +24,7 @@ FastAPI service for call management and Supabase persistence. Gemini assistance 
 | `GET` | `/calls` | List calls newest first for history. |
 | `GET` | `/calls/{call_id}` | Retrieve a call and its saved stages for resuming. |
 | `PUT` | `/calls/{call_id}/stages/{stage_number}` | Save or update one stage (1–8), with category, exact words, and notes. |
+| `POST` | `/calls/{call_id}/analyze` | Analyze current words and earlier saved stages; returns likely stage and intent, suggestions, next action, uncertainty, and source (`gemini` or `fallback`). |
 | `POST` | `/calls/{call_id}/close` | Close a call with a caller-selected outcome and record end time and duration. |
 
 Closing a call sets `outcome_source` to `caller_selected`. Transcript source labels belong in `original_outcome`; inferred outcomes remain separate and must not overwrite `not_logged`.
@@ -36,5 +37,7 @@ Apply `../supabase/migrations/202610270001_create_calls_and_call_stages.sql` to 
 
 - **Completed:** Supabase schema, local environment configuration, health checks, and call create/list/retrieve/stage-save/close routes.
 - **Partly verified:** call creation and listing were manually checked through `/docs`.
-- **Still to verify:** saving/updating a stage, retrieving saved stage data, closing a call, and seeing the completed call in history.
-- **Planned:** frontend integration, Gemini suggestions and fallback, deployment, and end-to-end verification.
+- **Implemented:** reference-inspired frontend workflow and optional Gemini suggestions with a local fallback. Gemini runs only on the backend; the caller remains in control.
+- **Still to verify:** complete manual workflow against Supabase and live Gemini behavior after `GEMINI_API_KEY` is configured.
+- **In progress:** source outcomes and all call endings have been reviewed; transcript-informed intent labels, stage patterns, and a 12-case synthetic evaluation set are implemented. Run `.\.venv\Scripts\python.exe scripts\evaluate_gemini.py` from the backend directory for the live prompt check; it sends only synthetic paraphrases to Gemini.
+- **Planned:** deployment and full end-to-end verification.

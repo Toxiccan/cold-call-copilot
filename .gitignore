@@ -3,6 +3,9 @@
 .env.*
 !.env.example
 
+# Assignment-provided transcript bundle is for local analysis only
+cold-call-transcripts-100/
+
 # Python
 __pycache__/
 *.py[cod]

@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Path
 from pydantic import BaseModel, Field
 
 from app.database import get_supabase_client
+from app.services.gemini import analyze_call as analyze_call_with_gemini
 
 
 router = APIRouter(prefix="/calls", tags=["calls"])
@@ -20,6 +21,11 @@ class CallStageSave(BaseModel):
     response_category: str | None = Field(default=None, max_length=200)
     prospect_words: str | None = Field(default=None, max_length=10000)
     notes: str | None = Field(default=None, max_length=5000)
+
+
+class CallAnalyzeRequest(BaseModel):
+    stage_number: int = Field(ge=1, le=8)
+    prospect_words: str = Field(default="", max_length=10000)
 
 
 CallOutcome = Literal[
@@ -197,6 +203,55 @@ def get_call(call_id: UUID) -> dict[str, Any]:
         raise HTTPException(
             status_code=502,
             detail="Could not load this call. Check the backend and Supabase connection.",
+        ) from exc
+
+
+@router.post("/{call_id}/analyze")
+def analyze_call_suggestions(
+    call_id: UUID, request: CallAnalyzeRequest
+) -> dict[str, Any]:
+    """Suggest possible replies using current words and saved earlier stages."""
+    call_key = str(call_id)
+    try:
+        client = get_supabase_client()
+        call_result = (
+            client.table("calls")
+            .select("id")
+            .eq("id", call_key)
+            .maybe_single()
+            .execute()
+        )
+        if call_result.data is None:
+            raise HTTPException(status_code=404, detail="Call not found.")
+
+        stage_result = (
+            client.table("call_stages")
+            .select("stage_number, response_category, prospect_words, notes")
+            .eq("call_id", call_key)
+            .order("stage_number")
+            .execute()
+        )
+        previous_stages = [
+            {
+                "stage_number": stage["stage_number"],
+                "response_category": stage.get("response_category"),
+                "prospect_words": (stage.get("prospect_words") or "")[:2000],
+                "notes": (stage.get("notes") or "")[:1000],
+            }
+            for stage in (stage_result.data or [])
+            if stage["stage_number"] < request.stage_number
+        ]
+        return analyze_call_with_gemini(
+            request.stage_number,
+            request.prospect_words,
+            previous_stages,
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502,
+            detail="Could not analyze this call. Check the backend and Supabase connection.",
         ) from exc
     
     
