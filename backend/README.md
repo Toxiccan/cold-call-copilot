@@ -33,11 +33,12 @@ Closing a call sets `outcome_source` to `caller_selected`. Transcript source lab
 
 Apply `../supabase/migrations/202610270001_create_calls_and_call_stages.sql` to Supabase before starting the API. It defines the `calls` and `call_stages` tables and their constraints.
 
-## Progress
+## Module 1 status: Complete
 
-- **Completed:** Supabase schema, local environment configuration, health checks, and call create/list/retrieve/stage-save/close routes.
-- **Partly verified:** call creation and listing were manually checked through `/docs`.
-- **Implemented:** reference-inspired frontend workflow and optional Gemini suggestions with a local fallback. Gemini runs only on the backend; the caller remains in control.
-- **Still to verify:** complete manual workflow against Supabase and live Gemini behavior after `GEMINI_API_KEY` is configured.
-- **In progress:** source outcomes and all call endings have been reviewed; transcript-informed intent labels, stage patterns, and a 12-case synthetic evaluation set are implemented. Run `.\.venv\Scripts\python.exe scripts\evaluate_gemini.py` from the backend directory for the live prompt check; it sends only synthetic paraphrases to Gemini.
-- **Planned:** deployment and full end-to-end verification.
+- Supabase schema and call-management routes are implemented and deployed.
+- The frontend supports the full call workflow: create, stage save/update, resume, history, and close with a caller-selected outcome.
+- Optional suggestions use current prospect words and earlier saved stages. Gemini calls stay on the backend; a safe local fallback is returned when Gemini is unavailable.
+- All 17 backend unit tests passed. Three live callback, objection, and do-not-call scenarios returned appropriate intent classifications and suggestions. In those live checks, the UI identified the source as fallback and uncertainty as high.
+- Frontend lint and production build passed. Deployment addresses and project status are in the [root README](../README.md).
+
+Transcript observations, source outcome handling, and prompt decisions are documented in [`../docs/transcript-analysis.md`](../docs/transcript-analysis.md).

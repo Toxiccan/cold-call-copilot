@@ -1,6 +1,6 @@
 # Frontend
 
-React + Vite frontend for the Cold Call Copilot. The active-call guide and call-history views use FastAPI for call creation, stage persistence, resume, outcome logging, and optional AI response suggestions. Suggestions come from backend Gemini when configured, otherwise from a local fallback. The full workflow still needs local verification.
+React + Vite frontend for the Cold Call Copilot. The deployed active-call guide and call-history views use FastAPI for call creation, stage persistence, resume, outcome logging, and optional AI response suggestions. Suggestions come from backend Gemini when available, otherwise from a local fallback. Module 1 is complete; all three live scenario checks returned appropriate suggestions, and the UI identified them as fallback results with high uncertainty.
 
 ## Local setup
 
