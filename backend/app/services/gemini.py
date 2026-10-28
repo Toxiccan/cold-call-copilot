@@ -1,10 +1,15 @@
 """Gemini-backed call coaching with a local fallback when AI is unavailable."""
 
 import json
+import logging
 import os
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from app.services.transcript_guidance import INTENT_LABELS, prompt_guidance
+
+
+logger = logging.getLogger(__name__)
 
 
 STAGE_NAMES = {
@@ -296,5 +301,19 @@ def analyze_call(
     """Use Gemini when available, otherwise return safe fallback suggestions."""
     try:
         return _request_gemini_analysis(stage_number, prospect_words, previous_stages)
-    except Exception:
-        return fallback_suggestions(stage_number, prospect_words)
+    except HTTPError as exc:
+        logger.warning("Gemini returned HTTP %s; using fallback suggestions.", exc.code)
+    except TimeoutError:
+        logger.warning("Gemini request timed out; using fallback suggestions.")
+    except URLError as exc:
+        logger.warning(
+            "Gemini connection failed (%s); using fallback suggestions.",
+            type(exc.reason).__name__,
+        )
+    except Exception as exc:
+        logger.warning(
+            "Gemini analysis failed (%s); using fallback suggestions.",
+            type(exc).__name__,
+        )
+
+    return fallback_suggestions(stage_number, prospect_words)
